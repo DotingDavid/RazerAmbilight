@@ -23,7 +23,7 @@ namespace Ambilight.Logic
 
         public void Process(Bitmap newImage)
         {
-            Bitmap resizedMap = ImageManipulation.ResizeImage(newImage, 2, 1);
+            Bitmap resizedMap = ImageManipulation.ResizeImage(newImage, DeviceConstants.Headset.GridWidth, DeviceConstants.Headset.GridHeight);
             Bitmap saturatedMap = ImageManipulation.ApplySaturation(resizedMap, _settings.Saturation);
             resizedMap.Dispose(); // Dispose the intermediate bitmap
 
@@ -37,8 +37,8 @@ namespace Ambilight.Logic
             using (var fastBitmap = new FastBitmap(map))
             {
                 fastBitmap.Lock();
-                _headsetGrid[0] = toColoreColor(fastBitmap.GetPixel(0, 0));
-                _headsetGrid[1] = toColoreColor(fastBitmap.GetPixel(1, 0));
+                _headsetGrid[DeviceConstants.Headset.LeftEarIndex] = toColoreColor(fastBitmap.GetPixel(0, 0));
+                _headsetGrid[DeviceConstants.Headset.RightEarIndex] = toColoreColor(fastBitmap.GetPixel(1, 0));
             }
         }
 

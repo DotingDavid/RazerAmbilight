@@ -90,9 +90,6 @@ namespace Ambilight.DesktopDuplication
 
         }
 
-        private const int mipMapLevel = 2;
-        private const int scalingFactor = 1 << mipMapLevel;
-
         private bool RetrieveFrame()
         {
 
@@ -106,8 +103,8 @@ namespace Ambilight.DesktopDuplication
                     CpuAccessFlags = CpuAccessFlags.Read,
                     BindFlags = BindFlags.None,
                     Format = Format.B8G8R8A8_UNorm,
-                    Width = desktopWidth / scalingFactor,
-                    Height = desktopHeight / scalingFactor,
+                    Width = desktopWidth / DesktopDuplicationConstants.ScalingFactor,
+                    Height = desktopHeight / DesktopDuplicationConstants.ScalingFactor,
                     OptionFlags = ResourceOptionFlags.None,
                     MipLevels = 1,
                     ArraySize = 1,
@@ -119,7 +116,7 @@ namespace Ambilight.DesktopDuplication
             try
             {
                 if (_outputDuplication == null) throw new Exception("_outputDuplication is null");
-                _outputDuplication.AcquireNextFrame(500, out var frameInformation, out desktopResource);
+                _outputDuplication.AcquireNextFrame(DesktopDuplicationConstants.FrameAcquireTimeoutMs, out var frameInformation, out desktopResource);
             }
             catch (SharpDXException ex)
             {
@@ -142,7 +139,7 @@ namespace Ambilight.DesktopDuplication
                     Width = desktopWidth,
                     Height = desktopHeight,
                     OptionFlags = ResourceOptionFlags.GenerateMipMaps,
-                    MipLevels = mipMapLevel + 1,
+                    MipLevels = DesktopDuplicationConstants.MipMapLevel + 1,
                     ArraySize = 1,
                     SampleDescription = { Count = 1, Quality = 0 },
                     Usage = ResourceUsage.Default
@@ -163,8 +160,8 @@ namespace Ambilight.DesktopDuplication
             // Generates the mipmap of the screen
             _device.ImmediateContext.GenerateMips(_smallerTextureView);
 
-            // Copy the mipmap 1 of smallerTexture (size/2) to the staging texture
-            _device.ImmediateContext.CopySubresourceRegion(_smallerTexture, mipMapLevel, null, _stagingTexture, 0);
+            // Copy the mipmap to the staging texture
+            _device.ImmediateContext.CopySubresourceRegion(_smallerTexture, DesktopDuplicationConstants.MipMapLevel, null, _stagingTexture, 0);
 
             desktopResource.Dispose(); //perf?
             return true;
@@ -176,8 +173,8 @@ namespace Ambilight.DesktopDuplication
             var mapSource = _device.ImmediateContext.MapSubresource(_stagingTexture, 0, MapMode.Read, MapFlags.None);
 
             Bitmap image;
-            var width = _outputDescription.DesktopBounds.GetWidth() / scalingFactor;
-            var height = _outputDescription.DesktopBounds.GetHeight() / scalingFactor;
+            var width = _outputDescription.DesktopBounds.GetWidth() / DesktopDuplicationConstants.ScalingFactor;
+            var height = _outputDescription.DesktopBounds.GetHeight() / DesktopDuplicationConstants.ScalingFactor;
 
             if (reusableImage != null && reusableImage.Width == width && reusableImage.Height == height)
             {
@@ -223,7 +220,7 @@ namespace Ambilight.DesktopDuplication
 
         public bool IsDisposed { get; private set; }
 
-        public static int ScalingFactor => scalingFactor;
+        public static int ScalingFactor => DesktopDuplicationConstants.ScalingFactor;
 
         public void Dispose()
         {

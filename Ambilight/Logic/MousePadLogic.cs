@@ -29,7 +29,7 @@ namespace Ambilight.Logic
         /// <param name="newImage">ScreenShot</param>
         public void Process(Bitmap newImage)
         {
-            Bitmap resizedMap = ImageManipulation.ResizeImage(newImage, 7, 6);
+            Bitmap resizedMap = ImageManipulation.ResizeImage(newImage, DeviceConstants.Mousepad.GridWidth, DeviceConstants.Mousepad.GridHeight);
             Bitmap saturatedMap = ImageManipulation.ApplySaturation(resizedMap, _settings.Saturation);
             resizedMap.Dispose(); // Dispose the intermediate bitmap
 
@@ -56,22 +56,26 @@ namespace Ambilight.Logic
 
                 if (!_settings.AmbiModeEnabled)
                 {
-                    for (int i = 0; i < 4; i++)
+                    // Right edge LEDs (0-3)
+                    for (int i = 0; i <= DeviceConstants.Mousepad.RightEdgeMaxIndex; i++)
                     {
-                        Color color = fastBitmap.GetPixel(6, i);
+                        Color color = fastBitmap.GetPixel(DeviceConstants.Mousepad.GridWidth - 1, i);
                         _mousepadGrid[i] = new ColoreColor((byte)color.R, (byte)color.G, (byte)color.B);
                     }
 
-                    Color colorC = fastBitmap.GetPixel(6, 4);
-                    _mousepadGrid[4] = new ColoreColor((byte)colorC.R, (byte)colorC.G, (byte)colorC.B);
+                    // Bottom-right corner LED (4)
+                    Color colorC = fastBitmap.GetPixel(DeviceConstants.Mousepad.GridWidth - 1, DeviceConstants.Mousepad.BottomRightCornerIndex);
+                    _mousepadGrid[DeviceConstants.Mousepad.BottomRightCornerIndex] = new ColoreColor((byte)colorC.R, (byte)colorC.G, (byte)colorC.B);
 
-                    for (int i = 5; i >= 0; i--)
+                    // Bottom edge LEDs (5-10)
+                    for (int i = DeviceConstants.Mousepad.BottomEdgeStartX; i >= DeviceConstants.Mousepad.BottomEdgeEndX; i--)
                     {
-                        Color color = fastBitmap.GetPixel(i, 5);
+                        Color color = fastBitmap.GetPixel(i, DeviceConstants.Mousepad.GridHeight - 1);
                         _mousepadGrid[10 - i] = new ColoreColor((byte)color.R, (byte)color.G, (byte)color.B);
                     }
 
-                    for (int i = 3; i >= 0; i--)
+                    // Left edge + corner LEDs (11-14)
+                    for (int i = DeviceConstants.Mousepad.LeftEdgeMaxIndex; i >= 0; i--)
                     {
                         Color color = fastBitmap.GetPixel(0, i);
                         _mousepadGrid[14 - i] = new ColoreColor((byte)color.R, (byte)color.G, (byte)color.B);
@@ -79,28 +83,30 @@ namespace Ambilight.Logic
                 }
                 else
                 {
-                    //RIGHT
-                    for (int i = 0; i < 4; i++)
+                    // Ambi mode: use solid colors from specific regions
+
+                    // Right edge zone
+                    for (int i = 0; i <= DeviceConstants.Mousepad.RightEdgeMaxIndex; i++)
                     {
-                        Color color = fastBitmap.GetPixel(6, 5);
+                        Color color = fastBitmap.GetPixel(DeviceConstants.Mousepad.AmbiRightX, DeviceConstants.Mousepad.AmbiRightY);
                         _mousepadGrid[i] = new ColoreColor((byte)color.R, (byte)color.G, (byte)color.B);
                     }
 
-                    //RIGHT DOWN CORNOR
-                    Color colorC = fastBitmap.GetPixel(6, 5);
-                    _mousepadGrid[4] = new ColoreColor((byte)colorC.R, (byte)colorC.G, (byte)colorC.B);
+                    // Bottom-right corner
+                    Color colorC = fastBitmap.GetPixel(DeviceConstants.Mousepad.AmbiRightX, DeviceConstants.Mousepad.AmbiRightY);
+                    _mousepadGrid[DeviceConstants.Mousepad.BottomRightCornerIndex] = new ColoreColor((byte)colorC.R, (byte)colorC.G, (byte)colorC.B);
 
-                    //BOTTOM
-                    for (int i = 5; i >= 0; i--)
+                    // Bottom edge zone
+                    for (int i = DeviceConstants.Mousepad.BottomEdgeStartX; i >= DeviceConstants.Mousepad.BottomEdgeEndX; i--)
                     {
-                        Color color = fastBitmap.GetPixel(5, 5);
+                        Color color = fastBitmap.GetPixel(DeviceConstants.Mousepad.AmbiBottomX, DeviceConstants.Mousepad.AmbiBottomY);
                         _mousepadGrid[10 - i] = new ColoreColor((byte)color.R, (byte)color.G, (byte)color.B);
                     }
 
-                    ///CORNER + LEFT
-                    for (int i = 3; i >= 0; i--)
+                    // Left edge zone
+                    for (int i = DeviceConstants.Mousepad.LeftEdgeMaxIndex; i >= 0; i--)
                     {
-                        Color color = fastBitmap.GetPixel(4, 5);
+                        Color color = fastBitmap.GetPixel(DeviceConstants.Mousepad.AmbiLeftX, DeviceConstants.Mousepad.AmbiLeftY);
                         _mousepadGrid[14 - i] = new ColoreColor((byte)color.R, (byte)color.G, (byte)color.B);
                     }
                 }

@@ -58,7 +58,7 @@ namespace Ambilight.Logic
                         Color color;
 
                         if (_settings.AmbiModeEnabled)
-                            color = fastBitmap.GetPixel(6, 8);
+                            color = fastBitmap.GetPixel(DeviceConstants.Mouse.AmbiModeSampleX, DeviceConstants.Mouse.AmbiModeSampleY);
                         else
                             color = fastBitmap.GetPixel(c, r);
 

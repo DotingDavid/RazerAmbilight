@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using Ambilight.DesktopDuplication;
 using Ambilight.Util;
 using NLog;
 
@@ -33,15 +34,15 @@ namespace Ambilight
                 if (cropSides)
                 {
                     // Validate image dimensions are suitable for 21:9 crop
-                    if (image.Width < 21 || image.Height < 1)
+                    if (image.Width < DesktopDuplicationConstants.UltrawideConversion.MinimumWidth || image.Height < 1)
                     {
                         _log.Warn($"Image too small for ultrawide crop: {image.Width}x{image.Height}. Using normal resize.");
                         return new Bitmap(image, width, height);
                     }
 
                     // Calculate crop rectangle for 21:9 to 16:9 conversion
-                    int cropX = Convert.ToInt32((image.Width / 21.0) * 2.5);
-                    int cropWidth = Convert.ToInt32((image.Width / 21.0) * 16);
+                    int cropX = Convert.ToInt32((image.Width / DesktopDuplicationConstants.UltrawideConversion.SourceAspectDivisor) * DesktopDuplicationConstants.UltrawideConversion.HorizontalOffsetMultiplier);
+                    int cropWidth = Convert.ToInt32((image.Width / DesktopDuplicationConstants.UltrawideConversion.SourceAspectDivisor) * DesktopDuplicationConstants.UltrawideConversion.TargetWidthMultiplier);
 
                     // Validate calculated crop rectangle
                     if (cropX < 0 || cropWidth <= 0 || cropX + cropWidth > image.Width)
