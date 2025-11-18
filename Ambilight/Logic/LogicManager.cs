@@ -16,6 +16,7 @@ namespace Ambilight.Logic
     class LogicManager
     {
         private readonly Logger logger = LogManager.GetCurrentClassLogger();
+        private readonly object _processLock = new object();
 
         private KeyboardLogic _keyboardLogic;
         private MousePadLogic _mousePadLogic;
@@ -84,26 +85,28 @@ namespace Ambilight.Logic
 
         /// <summary>
         /// Processes a captured Screenshot and create an Ambilight effect for the selected devices
+        /// Thread-safe method that can be called from desktop duplication reader thread
         /// </summary>
-        /// <param name="newImage"></param>
+        /// <param name="img">Screenshot to process (will not be modified)</param>
         public void ProcessNewImage(Bitmap img)
         {
-            Bitmap newImage = new Bitmap(img);
-
-            if (settings.KeyboardEnabled)
-                _keyboardLogic.Process(newImage);
-            if (settings.PadEnabled)
-                _mousePadLogic.Process(newImage);
-            if (settings.MouseEnabled)
-                _mouseLogic.Process(newImage);
-            if (settings.LinkEnabled)
-                _linkLogic.Process(newImage);
-            if (settings.HeadsetEnabled)
-                _headsetLogic.Process(newImage);
-            if (settings.KeypadEnabeled)
-                _keypadLogic.Process(newImage);
-
-            newImage.Dispose();
+            // Lock to prevent race conditions on settings and device grids
+            lock (_processLock)
+            {
+                // No need for defensive copy - all Process() methods only read the bitmap
+                if (settings.KeyboardEnabled)
+                    _keyboardLogic.Process(img);
+                if (settings.PadEnabled)
+                    _mousePadLogic.Process(img);
+                if (settings.MouseEnabled)
+                    _mouseLogic.Process(img);
+                if (settings.LinkEnabled)
+                    _linkLogic.Process(img);
+                if (settings.HeadsetEnabled)
+                    _headsetLogic.Process(img);
+                if (settings.KeypadEnabled)
+                    _keypadLogic.Process(img);
+            }
         }
     }
 }

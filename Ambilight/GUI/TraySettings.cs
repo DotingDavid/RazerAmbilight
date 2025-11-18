@@ -29,7 +29,7 @@ namespace Ambilight.GUI
         public bool LinkEnabled { get; private set; }
         public bool PadEnabled { get; private set; }
         public bool HeadsetEnabled { get; private set; }
-        public bool KeypadEnabeled { get; private set; }
+        public bool KeypadEnabled { get; private set; }
         public bool AmbiModeEnabled { get; private set; }
         public bool UltrawideModeEnabled { get; private set; }
         public bool AutostartEnabled { get; private set; }
@@ -137,7 +137,7 @@ namespace Ambilight.GUI
             {
                 EnableMenuItemOnClick(sender, args);
                 Properties.Settings.Default.keypadEnabled = (sender as MenuItem).Checked;
-                KeypadEnabeled = (sender as MenuItem).Checked;
+                KeypadEnabled = (sender as MenuItem).Checked;
                 Properties.Settings.Default.Save();
             });
 
@@ -183,14 +183,14 @@ namespace Ambilight.GUI
             _headsetEnabled.Checked = Properties.Settings.Default.headsetEnabled;
             HeadsetEnabled = Properties.Settings.Default.headsetEnabled;
             _keypadEnabled.Checked = Properties.Settings.Default.keypadEnabled;
-            KeypadEnabeled = Properties.Settings.Default.keypadEnabled;
+            KeypadEnabled = Properties.Settings.Default.keypadEnabled;
             _linkEnabled.Checked = Properties.Settings.Default.linkEnabled;
             LinkEnabled = Properties.Settings.Default.linkEnabled;
             _ambiModeEnabled.Checked = Properties.Settings.Default.ambiEnabled;
             AmbiModeEnabled = Properties.Settings.Default.ambiEnabled;
             _ultrawideModeEnabled.Checked = Properties.Settings.Default.ambiEnabled;
             UltrawideModeEnabled = Properties.Settings.Default.ultrawideEnabled;
-            _autostart.Checked = checkAutostart(Environment.GetFolderPath(Environment.SpecialFolder.Startup) + "/Ambilight.lnk");
+            _autostart.Checked = checkAutostart(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "Ambilight.lnk"));
             AutostartEnabled = Properties.Settings.Default.autostartEnabled;
 
             var components = new System.ComponentModel.Container();
@@ -272,7 +272,7 @@ namespace Ambilight.GUI
         /// <returns>True if autostart got enabled. False if autostart got disabled</returns>
         private bool changeAutoStart()
         {
-            string shortcutPath= Environment.GetFolderPath(Environment.SpecialFolder.Startup)+"/Ambilight.lnk";
+            string shortcutPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "Ambilight.lnk");
             if(checkAutostart(shortcutPath))
             {
                 System.IO.File.Delete(shortcutPath);
@@ -281,10 +281,11 @@ namespace Ambilight.GUI
             else
             {
                 WshShell shell = new WshShell();
-                IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(Environment.GetFolderPath(Environment.SpecialFolder.Startup) + "/Ambilight.lnk");
+                IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "Ambilight.lnk"));
                 shortcut.Description = "Ambilight for Razer devices";
-                shortcut.TargetPath= System.IO.Path.GetDirectoryName(Application.ExecutablePath)+"/Ambilight.exe";
-                shortcut.WorkingDirectory= System.IO.Path.GetDirectoryName(Application.ExecutablePath);
+                string executableDirectory = System.IO.Path.GetDirectoryName(Application.ExecutablePath);
+                shortcut.TargetPath = System.IO.Path.Combine(executableDirectory, "Ambilight.exe");
+                shortcut.WorkingDirectory = executableDirectory;
                 shortcut.Save();
                 return true;
             }

@@ -17,15 +17,41 @@ namespace Ambilight
         /// <param name="image">The image to resize.</param>
         /// <param name="width">The width to resize to.</param>
         /// <param name="height">The height to resize to.</param>
+        /// <param name="cropSides">If true, crops a 21:9 image to 16:9 before resizing</param>
         /// <returns>The resized image.</returns>
         public static Bitmap ResizeImage(Image image, int width, int height, bool cropSides = false)
-        {           
+        {
+            if (image == null)
+                throw new ArgumentNullException(nameof(image));
+            if (width <= 0)
+                throw new ArgumentOutOfRangeException(nameof(width), "Width must be positive");
+            if (height <= 0)
+                throw new ArgumentOutOfRangeException(nameof(height), "Height must be positive");
+
             try
             {
                 if (cropSides)
                 {
+                    // Validate image dimensions are suitable for 21:9 crop
+                    if (image.Width < 21 || image.Height < 1)
+                    {
+                        _log.Warn($"Image too small for ultrawide crop: {image.Width}x{image.Height}. Using normal resize.");
+                        return new Bitmap(image, width, height);
+                    }
+
+                    // Calculate crop rectangle for 21:9 to 16:9 conversion
+                    int cropX = Convert.ToInt32((image.Width / 21.0) * 2.5);
+                    int cropWidth = Convert.ToInt32((image.Width / 21.0) * 16);
+
+                    // Validate calculated crop rectangle
+                    if (cropX < 0 || cropWidth <= 0 || cropX + cropWidth > image.Width)
+                    {
+                        _log.Warn($"Invalid crop rectangle calculated: x={cropX}, width={cropWidth}. Using normal resize.");
+                        return new Bitmap(image, width, height);
+                    }
+
                     // Cuts down a 21:9 image to a 16:9 image by removing the outer sides
-                    using (var croppedImage = new Bitmap(image).CropAtRectangle(new Rectangle(Convert.ToInt32((image.Width / 21) * 2.5), 0, (image.Width / 21) * 16, image.Height)))
+                    using (var croppedImage = new Bitmap(image).CropAtRectangle(new Rectangle(cropX, 0, cropWidth, image.Height)))
                     {
                         return new Bitmap(croppedImage, width, height);
                     }
@@ -33,9 +59,8 @@ namespace Ambilight
             }
             catch (Exception ex)
             {
-                // ToDo: Log this exception. Just catching in case there are memory issues with the Bitmap. Shouldn't happen though.
-                _log.Error(ex, $"Error while resizing the image. width: {width} height: {height} cropSides: {cropSides}");
-            }            
+                _log.Error(ex, $"Error while resizing the image. width: {width} height: {height} cropSides: {cropSides}. Falling back to normal resize.");
+            }
 
             return new Bitmap(image, width, height);
         }
