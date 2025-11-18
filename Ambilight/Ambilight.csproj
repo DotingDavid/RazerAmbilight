@@ -203,6 +203,7 @@
       <DependentUpon>SaturationControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Util\Extensions.cs" />
+    <Compile Include="Util\FastBitmap.cs" />
     <Compile Include="Util\FpsLogger.cs" />
     <Compile Include="Util\ImageManipulation.cs" />
     <Compile Include="Util\ScreenInterrogatory.cs" />

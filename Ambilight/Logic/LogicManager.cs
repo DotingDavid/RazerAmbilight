@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Threading.Tasks;
 using Ambilight.DesktopDuplication;
 using Ambilight.GUI;
 using Colore;
@@ -25,42 +26,60 @@ namespace Ambilight.Logic
 
         private readonly TraySettings settings;
 
-        public LogicManager(TraySettings settings)
+        private LogicManager(TraySettings settings)
         {
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
-
-            this.StartLogic(settings);
         }
 
-        private async void StartLogic(TraySettings settings)
+        public static async Task<LogicManager> CreateAsync(TraySettings settings)
         {
-            //Initializing Chroma SDK
-            IChroma chromaInstance = await ColoreProvider.CreateNativeAsync();
-            AppInfo appInfo = new AppInfo(
-                "Ambilight for Razer devices",
-                "Shows an ambilight effect on your Razer Chroma devices",
-                "Nico Jeske",
-                "ambilight@nicojeske.de",
-                new[]
-                {
-                    ApiDeviceType.Headset,
-                    ApiDeviceType.Keyboard,
-                    ApiDeviceType.Keypad,
-                    ApiDeviceType.Mouse,
-                    ApiDeviceType.Mousepad,
-                    ApiDeviceType.ChromaLink
-                },
-                Category.Application);
-            await chromaInstance.InitializeAsync(appInfo);
+            var manager = new LogicManager(settings);
+            await manager.InitializeAsync();
+            return manager;
+        }
 
-            _keyboardLogic = new KeyboardLogic(settings, chromaInstance);
-            _mousePadLogic = new MousePadLogic(settings, chromaInstance);
-            _mouseLogic = new MouseLogic(settings, chromaInstance);
-            _linkLogic = new LinkLogic(settings, chromaInstance);
-            _headsetLogic = new HeadsetLogic(settings, chromaInstance);
-            _keypadLogic = new KeypadLogic(settings, chromaInstance);
+        private async Task InitializeAsync()
+        {
+            try
+            {
+                logger.Info("Initializing Chroma SDK...");
+                //Initializing Chroma SDK
+                IChroma chromaInstance = await ColoreProvider.CreateNativeAsync();
+                AppInfo appInfo = new AppInfo(
+                    "Ambilight for Razer devices",
+                    "Shows an ambilight effect on your Razer Chroma devices",
+                    "Nico Jeske",
+                    "ambilight@nicojeske.de",
+                    new[]
+                    {
+                        ApiDeviceType.Headset,
+                        ApiDeviceType.Keyboard,
+                        ApiDeviceType.Keypad,
+                        ApiDeviceType.Mouse,
+                        ApiDeviceType.Mousepad,
+                        ApiDeviceType.ChromaLink
+                    },
+                    Category.Application);
+                await chromaInstance.InitializeAsync(appInfo);
 
-            DesktopDuplicatorReader reader = new DesktopDuplicatorReader(this, settings);
+                logger.Info("Chroma SDK initialized successfully");
+
+                _keyboardLogic = new KeyboardLogic(settings, chromaInstance);
+                _mousePadLogic = new MousePadLogic(settings, chromaInstance);
+                _mouseLogic = new MouseLogic(settings, chromaInstance);
+                _linkLogic = new LinkLogic(settings, chromaInstance);
+                _headsetLogic = new HeadsetLogic(settings, chromaInstance);
+                _keypadLogic = new KeypadLogic(settings, chromaInstance);
+
+                logger.Info("Device logic initialized");
+
+                DesktopDuplicatorReader reader = new DesktopDuplicatorReader(this, settings);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, "Failed to initialize LogicManager");
+                throw;
+            }
         }
 
         /// <summary>

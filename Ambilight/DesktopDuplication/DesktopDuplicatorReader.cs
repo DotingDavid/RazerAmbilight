@@ -80,7 +80,7 @@ namespace Ambilight.DesktopDuplication
 
                     _logic.ProcessNewImage(newImage);
 
-                    int minFrameTimeInMs = 1; //1000/FPS
+                    int minFrameTimeInMs = 1000 / Math.Max(1, settings.Tickrate); // Convert FPS to frame time
                     var elapsedMs = (int)frameTime.ElapsedMilliseconds;
                     if (elapsedMs < minFrameTimeInMs)
                     {
@@ -114,13 +114,18 @@ namespace Ambilight.DesktopDuplication
             {
                 return _desktopDuplicator.GetLatestFrame(reusableBitmap);
             }
+            catch (DesktopDuplicationException ex)
+            {
+                // Expected exceptions during normal operation (e.g., display mode changes)
+                _log.Warn(ex, "Desktop duplication failed, will retry");
+                _desktopDuplicator?.Dispose();
+                _desktopDuplicator = null;
+                return null;
+            }
             catch (Exception ex)
             {
-                if (ex.Message != "_outputDuplication is null")
-                {
-                    _log.Error(ex, "GetNextFrame() failed.");
-                }
-
+                // Unexpected exceptions
+                _log.Error(ex, "GetNextFrame() failed with unexpected error");
                 _desktopDuplicator?.Dispose();
                 _desktopDuplicator = null;
                 return null;

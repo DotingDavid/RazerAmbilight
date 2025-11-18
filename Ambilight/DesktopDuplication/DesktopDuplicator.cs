@@ -228,6 +228,8 @@ namespace Ambilight.DesktopDuplication
         public void Dispose()
         {
             IsDisposed = true;
+            _smallerTextureView?.Dispose();
+            _smallerTexture?.Dispose();
             _stagingTexture?.Dispose();
             _outputDuplication?.Dispose();
             _device?.Dispose();
