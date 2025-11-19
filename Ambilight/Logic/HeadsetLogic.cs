@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using Ambilight.GUI;
+using Ambilight.Util;
 using Colore;
 using Colore.Effects.Headset;
 using Microsoft.VisualBasic;
@@ -22,17 +23,23 @@ namespace Ambilight.Logic
 
         public void Process(Bitmap newImage)
         {
-            Bitmap mapHeadset = ImageManipulation.ResizeImage(newImage, 2, 1);
-            mapHeadset = ImageManipulation.ApplySaturation(mapHeadset, _settings.Saturation);
-            ApplyPictureToGrid(mapHeadset);
+            Bitmap resizedMap = ImageManipulation.ResizeImage(newImage, DeviceConstants.Headset.GridWidth, DeviceConstants.Headset.GridHeight);
+            Bitmap saturatedMap = ImageManipulation.ApplySaturation(resizedMap, _settings.Saturation);
+            resizedMap.Dispose(); // Dispose the intermediate bitmap
+
+            ApplyPictureToGrid(saturatedMap);
             _chroma.Headset.SetCustomAsync(_headsetGrid);
-            mapHeadset.Dispose();
+            saturatedMap.Dispose();
         }
 
         private void ApplyPictureToGrid(Bitmap map)
         {
-            _headsetGrid[0] = toColoreColor(map.GetPixel(0, 0));
-            _headsetGrid[1] = toColoreColor(map.GetPixel(1, 0));
+            using (var fastBitmap = new FastBitmap(map))
+            {
+                fastBitmap.Lock();
+                _headsetGrid[DeviceConstants.Headset.LeftEarIndex] = toColoreColor(fastBitmap.GetPixel(0, 0));
+                _headsetGrid[DeviceConstants.Headset.RightEarIndex] = toColoreColor(fastBitmap.GetPixel(1, 0));
+            }
         }
 
         private ColoreColor toColoreColor(Color color)

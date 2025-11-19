@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using Ambilight.GUI;
+using Ambilight.Util;
 using Colore;
 using Colore.Effects.ChromaLink;
 using ColoreColor = Colore.Data.Color;
@@ -29,32 +30,46 @@ namespace Ambilight.Logic
         /// <param name="newImage">ScreenShot</param>
         public void Process(Bitmap newImage)
         {
-            Bitmap map = ImageManipulation.ResizeImage(newImage, 4, 1);
-            map = ImageManipulation.ApplySaturation(map, _settings.Saturation);
-            
-            ApplyImageToGrid(map);
-            ApplyC1(ImageManipulation.ResizeImage(map, 1, 1));
+            Bitmap resizedMap = ImageManipulation.ResizeImage(newImage, DeviceConstants.ChromaLink.GridWidth, DeviceConstants.ChromaLink.GridHeight);
+            Bitmap saturatedMap = ImageManipulation.ApplySaturation(resizedMap, _settings.Saturation);
+            resizedMap.Dispose(); // Dispose the intermediate bitmap
+
+            ApplyImageToGrid(saturatedMap);
+
+            Bitmap singlePixel = ImageManipulation.ResizeImage(saturatedMap, 1, 1);
+            ApplyC1(singlePixel);
+            singlePixel.Dispose(); // Dispose the temporary bitmap
+
             _chroma.ChromaLink.SetCustomAsync(_linkGrid);
-            map.Dispose();
+            saturatedMap.Dispose();
         }
 
         private void ApplyC1(Bitmap map)
         {
-            Color color = map.GetPixel(0,0);
-            _linkGrid[0] = new ColoreColor((byte)color.R, (byte)color.G, (byte)color.B);
+            using (var fastBitmap = new FastBitmap(map))
+            {
+                fastBitmap.Lock();
+                Color color = fastBitmap.GetPixel(0, 0);
+                _linkGrid[DeviceConstants.ChromaLink.FirstLedIndex] = new ColoreColor((byte)color.R, (byte)color.G, (byte)color.B);
+            }
         }
 
         /// <summary>
-        /// From a given resized screenshot, an ambilight effect will be created for the keyboard
+        /// From a given resized screenshot, an ambilight effect will be created for the Chroma Link
         /// </summary>
         /// <param name="map">resized screenshot</param>
         private void ApplyImageToGrid(Bitmap map)
         {
-            //Iterating over each key and set it to the corrosponding color of the resized Screenshot
-            for (int i = 1; i < Colore.Effects.ChromaLink.ChromaLinkConstants.MaxLeds; i++)
+            using (var fastBitmap = new FastBitmap(map))
             {
-                Color color = map.GetPixel(i-1,0);
-                _linkGrid[i] = new ColoreColor((byte)color.R, (byte)color.G, (byte)color.B);
+                fastBitmap.Lock();
+
+                // Map grid pixels to Chroma Link LEDs (starting from LED 1)
+                for (int i = DeviceConstants.ChromaLink.StandardLedsStartIndex; i < Colore.Effects.ChromaLink.ChromaLinkConstants.MaxLeds; i++)
+                {
+                    Color color = fastBitmap.GetPixel(i - DeviceConstants.ChromaLink.StandardLedsStartIndex, 0);
+                    _linkGrid[i] = new ColoreColor((byte)color.R, (byte)color.G, (byte)color.B);
+                }
             }
         }
     }
